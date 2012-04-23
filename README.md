@@ -6,7 +6,7 @@ About
 
 minifortune is a minimal fortune-mod clone, dependent on libc only, that
 provides random fortune look up from directories containing fortune files with
-their corresponding .dat table files.
+their corresponding .dat files.
 
 The official fortune-mod (version 1.99.1) depends on the recode library, which
 additionally has its own dependencies. This basic clone only requires the C
@@ -41,8 +41,12 @@ Usage
 
 Example usage:
 
+	Display a random fortune from a random fortune file in the specified
+	directory:
 	$ minifortune /usr/share/fortune/
 
+	Display a random fortune from a specific fortune file in the specified
+	directory:
 	$ minifortune /usr/share/fortune/ linux
 
 License

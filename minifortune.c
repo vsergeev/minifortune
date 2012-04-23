@@ -3,7 +3,7 @@
  *
  * A minimal fortune-mod clone, dependent on libc only, that provides random
  * fortune look up from directories containing fortune files with their
- * corresponding .dat table files.
+ * corresponding .dat files.
  *
  * Usage: minifortune <path to fortunes> [filename]
  *
