@@ -1,4 +1,5 @@
 CC = gcc
+STRIP = strip
 CFLAGS = -Wall -O3 -D_GNU_SOURCE
 LDFLAGS =
 PROGNAME = minifortune
@@ -12,6 +13,7 @@ install: $(PROGNAME)
 
 $(PROGNAME): $(OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(PROGNAME).c -o $@
+	$(STRIP) $@
 
 clean:
 	rm -rf $(PROGNAME)
