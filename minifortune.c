@@ -1,4 +1,5 @@
-/* minifortune - Vanya Sergeev <vsergeev at gmail.com>
+/*
+ * minifortune - Vanya Sergeev <vsergeev at gmail.com>
  *
  * A minimal fortune-mod clone, dependent on libc only, that provides random
  * fortune look up from directories containing fortune files with their
@@ -53,12 +54,10 @@ int dat_file_filter(const struct dirent *d) {
 	if (len < 5)
 		return 0;
 	/* File name must end with ".dat" */
-	if (strncmp(d->d_name + (len - 4), ".dat", 4) != 0)
-		return 0;
-	return 1;
+	return (strncmp(d->d_name + (len - 4), ".dat", 4) == 0);
 }
 
-int random_fortune_file(char *dir_path, char **fortune_dat_path) {
+int random_fortune_filepath(char *dir_path, char **fortune_dat_path) {
 	struct dirent **fnamelist;
 	int n, i, ret;
 
@@ -129,7 +128,7 @@ int main(int argc, char *argv[]) {
 
 	if (argc < 3) {
 		/* Look up a random fortune dat file in the fortunes directory */
-		if (random_fortune_file(argv[1], &fortune_dat_path) <= 0) {
+		if (random_fortune_filepath(argv[1], &fortune_dat_path) <= 0) {
 			fprintf(stderr, "Error finding fortune file!\n");
 			exit(EXIT_FAILURE);
 		}
