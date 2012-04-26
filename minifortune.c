@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 	FILE *fp;
 	struct fortune_dat_header dat_header;
 	uint32_t fortune_id, fortune_pos, fortune_pos_next, fortune_len;
-	char *fortune;
+	char *fortune, *sep;
 
 	if (argc < 2) {
 		fprintf(stderr, "Usage: %s <path to fortunes> [filename]\n", argv[0]);
@@ -199,9 +199,10 @@ int main(int argc, char *argv[]) {
 
 	fclose(fp);
 
-	/* Check the fortune length (not including subsequent "\n%\n") */
-	fortune_len = fortune_pos_next - fortune_pos - 3;
-	if (fortune_len > dat_header.str_longlen) {
+	fortune_len = fortune_pos_next - fortune_pos;
+
+	/* Sanity check the fortune length (including the potential subsequent "%\n") */
+	if (fortune_len > dat_header.str_longlen+2) {
 		fprintf(stderr, "Invalid fortune length! Fortune dat file: %s\n", fortune_dat_path);
 		exit(EXIT_FAILURE);
 	}
@@ -215,8 +216,8 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	/* Allocate memory for the fortune, a newline, and \0 */
-	if ((fortune = malloc(fortune_len + 2)) == NULL) {
+	/* Allocate memory for the fortune + '\0' */
+	if ((fortune = malloc(fortune_len+1)) == NULL) {
 		perror("Error allocating memory for fortune! malloc");
 		fclose(fp);
 		exit(EXIT_FAILURE);
@@ -229,13 +230,20 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	/* Read the fortune with its subsequent newline */
-	if (fread(fortune, 1, fortune_len + 1, fp) < (fortune_len + 1)) {
+	/* Read the fortune */
+	if (fread(fortune, 1, fortune_len, fp) < fortune_len) {
 		fprintf(stderr, "Error reading fortune from %s! fread: %s\n", fortune_dat_path, strerror(errno));
 		fclose(fp);
 		exit(EXIT_FAILURE);
 	}
-	fortune[fortune_len + 1] = '\0';
+
+	/* Null terminate the fortune */
+	/* Depending on how the fortune file was terminated (single % or not),
+	 * the fortune may or may not end with the separator sequence "\n%\n" */
+	if ( (sep = strstr(fortune, "\n%\n")) != NULL)
+		*(++sep) = '\0';
+	else
+		fortune[fortune_len] = '\0';
 
 	/* Print the fortune */
 	fputs(fortune, stdout);
