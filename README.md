@@ -27,6 +27,8 @@ ftp://ftp.ibiblio.org/pub/linux/games/amusements/fortune/
 
 http://bradthemad.org/tech/notes/fortune_makefile.php
 
+http://www.linusakesson.net/cookies/
+
 Building
 --------
 
