@@ -38,18 +38,17 @@ Run make install to install minifortune to /usr/local/bin.
 Usage
 -----
 
-	Usage: minifortune <path to fortunes> [filename]
-	minifortune version 1.0
+    Usage: minifortune <path to fortune file or folder>
+    minifortune version 1.2
 
 Example usage:
 
-	Display a random fortune from a random fortune file in the specified
-	directory:
-	$ minifortune /usr/share/fortune/
+    Display a random fortune chosen from a random fortune file chosen from the
+    specified fortune directory:
+    $ minifortune /usr/share/fortune/
 
-	Display a random fortune from a specific fortune file in the specified
-	directory:
-	$ minifortune /usr/share/fortune/ linux
+    Display a random fortune chosen from the specified fortune file:
+    $ minifortune /usr/share/fortune/linux
 
 License
 -------
