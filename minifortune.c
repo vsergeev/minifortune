@@ -3,7 +3,7 @@
  *
  * A minimal fortune-mod clone, dependent on libc only, that provides random
  * fortune look up from directories containing fortune files with their
- * corresponding .dat files.
+ * corresponding .dat files, or fortune look up directly from fortune files.
  *
  * Usage: minifortune <path to fortune file or folder>
  *
@@ -50,6 +50,33 @@ void dat_header_dump(struct fortune_dat_header *dat_header) {
     printf("str_delim: %c\n", dat_header->str_delim);
 }
 #endif
+
+/******************************************************************************/
+/* Random Seed Initialization */
+/******************************************************************************/
+
+void random_seed_init(void) {
+    /* Set our random number generator seed */
+    #ifdef RANDOM_DEVICE_PATH
+    {
+        int fd;
+        uint32_t seed;
+        if ((fd = open(RANDOM_DEVICE_PATH, O_RDONLY)) < 0) {
+            fprintf(stderr, "Error opening %s for random seed. open: %s\n", RANDOM_DEVICE_PATH, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        if (read(fd, &seed, 4) < 4) {
+            fprintf(stderr, "Error reading from %s for random seed. read: %s\n", RANDOM_DEVICE_PATH, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        close(fd);
+        srand(seed);
+    }
+    #else
+    /* time + getpid seeding borrowed from original fortune-mod */
+    srand(time(NULL) + getpid());
+    #endif
+}
 
 /******************************************************************************/
 /* Utility functions to look up a random fortune file in a directory */
@@ -101,33 +128,6 @@ int random_datfile(char *dat_path, int maxlen, const char *dir_path) {
     free(fnamelist);
 
     return 0;
-}
-
-/******************************************************************************/
-/* Random Seed Initialization */
-/******************************************************************************/
-
-void random_seed_init(void) {
-    /* Set our random number generator seed */
-    #ifdef RANDOM_DEVICE_PATH
-    {
-        int fd;
-        uint32_t seed;
-        if ((fd = open(RANDOM_DEVICE_PATH, O_RDONLY)) < 0) {
-            fprintf(stderr, "Error opening %s for random seed. open: %s\n", RANDOM_DEVICE_PATH, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-        if (read(fd, &seed, 4) < 4) {
-            fprintf(stderr, "Error reading from %s for random seed. read: %s\n", RANDOM_DEVICE_PATH, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-        close(fd);
-        srand(seed);
-    }
-    #else
-    /* time + getpid seeding borrowed from original fortune-mod */
-    srand(time(NULL) + getpid());
-    #endif
 }
 
 /******************************************************************************/
@@ -192,7 +192,7 @@ int read_fortune_pos(uint32_t *pos, uint8_t *delim, const char *dat_path) {
 }
 
 /******************************************************************************/
-/* Read a fortune from a fortune file */
+/* Read a fortune from a fortune file at position pos and delimiter delim */
 /******************************************************************************/
 
 int read_fortune(char **fortune, const char *fortune_path, uint32_t pos, uint8_t delim) {
