@@ -1,6 +1,7 @@
 CC = gcc
 STRIP = strip
-CFLAGS = -Wall -O3 -D_GNU_SOURCE
+CFLAGS = -Wall -g -D_GNU_SOURCE
+#CFLAGS = -Wall -O3 -D_GNU_SOURCE
 LDFLAGS =
 OBJECTS = minifortune.o
 PROGNAME = minifortune
