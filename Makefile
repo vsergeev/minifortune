@@ -10,7 +10,7 @@ BINDIR = $(PREFIX)/bin
 all: $(PROGNAME)
 
 install: $(PROGNAME)
-	$(STRIP) $@
+	$(STRIP) $(PROGNAME)
 	install -D -s -m 0755 $(PROGNAME) $(DESTDIR)$(BINDIR)/$(PROGNAME)
 
 $(PROGNAME): $(OBJECTS)
