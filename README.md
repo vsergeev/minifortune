@@ -17,8 +17,6 @@ minifortune currently does not generate the random-access .dat files associated
 with fortune files; strfile can be used for this. The folder containing
 fortunes and their .dat files must be provided.
 
-Author: Vanya Sergeev, vsergeev at gmail.com.
-
 Where do I get fortune files?
 -----------------------------
 
@@ -33,8 +31,9 @@ http://www.linusakesson.net/cookies/
 Building
 --------
 
-Run make to build minifortune.
-Run make install to install minifortune to /usr/local/bin.
+Run `make` to build minifortune.
+
+Run `make install` to install minifortune to /usr/local/bin.
 
 Usage
 -----
@@ -44,21 +43,21 @@ Usage
 
 Example usage:
 
-    Display a random fortune chosen from a random fortune file chosen from the
-    specified fortune directory:
+    Display a random fortune chosen from a random fortune file chosen from a
+    fortune directory:
     $ minifortune /usr/share/fortune/
 
-    Display a random fortune chosen from the specified fortune file:
+    Display a random fortune chosen from a specific fortune file:
     $ minifortune /usr/share/fortune/linux
 
 How Fortune Files Work
 ----------------------
 
-Fortune files (e.g. /usr/share/fortune/wisdom) are simply plaintext ASCII files
-with fortunes typically delimited by a "\n%\n" separator. In order to allow for
-fast random access to a particular fortune in a fortune file, fortune files are
-usually paired with a corresponding binary .dat file (e.g.
-/usr/share/fortune/wisdom.dat), which contains metadata describing the number
+Fortune files (e.g. `/usr/share/fortune/wisdom`) are simply plaintext ASCII
+files with fortunes typically delimited by a "%\n" separator. In order to allow
+for fast random access to a particular fortune in a fortune file, fortune files
+are usually paired with a corresponding binary .dat file (e.g.
+`/usr/share/fortune/wisdom.dat`), which contains metadata describing the number
 of fortunes, longest fortune length, shortest fortune length, and delimiter
 used in the fortune file. The packed .dat file header looks like this:
 
