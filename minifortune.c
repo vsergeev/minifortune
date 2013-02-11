@@ -115,7 +115,7 @@ int random_datfile(char *dat_path, int maxlen, const char *dir_path) {
     /* Form a list of .dat fortune files */
     n = scandir(dir_path, &fnamelist, filter_extension_dat, alphasort);
     if (n < 0) {
-        fprintf(stderr, "Error reading fortune directory %s. scandir: %s\n", dir_path, strerror(errno));
+        fprintf(stderr, "Error reading fortune directory %s\nscandir: %s\n", dir_path, strerror(errno));
         return -1;
     }
 
@@ -144,13 +144,13 @@ int read_fortune_pos(uint32_t *pos, uint8_t *delim, const char *dat_path) {
 
     /* Open the dat file */
     if ( (fp = fopen(dat_path, "r")) == NULL) {
-        fprintf(stderr, "Error opening fortune dat file %s. fopen: %s\n", dat_path, strerror(errno));
+        fprintf(stderr, "Error opening fortune dat file %s\nfopen: %s\n", dat_path, strerror(errno));
         goto cleanup_failure;
     }
 
     /* Read the dat file header */
     if (fread(&dat_header, sizeof(struct fortune_dat_header), 1, fp) < 1) {
-        fprintf(stderr, "Error reading fortune dat header from %s. fread: %s\n", dat_path, strerror(errno));
+        fprintf(stderr, "Error reading fortune dat header from %s\nfread: %s\n", dat_path, strerror(errno));
         goto cleanup_failure;
     }
 
@@ -163,7 +163,7 @@ int read_fortune_pos(uint32_t *pos, uint8_t *delim, const char *dat_path) {
 
     /* Check the .dat file header */
     if (dat_header.str_version != 1 && dat_header.str_version != 2) {
-        fprintf(stderr, "Error, unsupported .dat header version %d in %s.\n", dat_header.str_version, dat_path);
+        fprintf(stderr, "Error, unsupported .dat header version %d in %s\n", dat_header.str_version, dat_path);
         goto cleanup_failure;
     }
 
@@ -172,13 +172,13 @@ int read_fortune_pos(uint32_t *pos, uint8_t *delim, const char *dat_path) {
 
     /* Seek to the fortune position in the dat file table */
     if (fseek(fp, fortune_id*4, SEEK_CUR) < 0) {
-        fprintf(stderr, "Error seeking to fortune id %d in %s. fseek: %s\n", fortune_id, dat_path, strerror(errno));
+        fprintf(stderr, "Error seeking to fortune id %d in %s\nfseek: %s\n", fortune_id, dat_path, strerror(errno));
         goto cleanup_failure;
     }
 
     /* Read the fortune position */
     if (fread(&fortune_pos, 4, 1, fp) < 1) {
-        fprintf(stderr, "Error reading fortune id %d in %s. fread: %s\n", fortune_id, dat_path, strerror(errno));
+        fprintf(stderr, "Error reading fortune id %d in %s\nfread: %s\n", fortune_id, dat_path, strerror(errno));
         goto cleanup_failure;
     }
     fortune_pos = ntohl(fortune_pos);
@@ -205,13 +205,13 @@ int read_fortune(char **fortune, const char *fortune_path, uint32_t pos, uint8_t
 
     /* Open the fortune file */
     if ( (fp = fopen(fortune_path, "r")) == NULL) {
-        fprintf(stderr, "Error opening fortune file %s. fopen: %s\n", fortune_path, strerror(errno));
+        fprintf(stderr, "Error opening fortune file %s\nfopen: %s\n", fortune_path, strerror(errno));
         goto cleanup_failure;
     }
 
     /* Seek to the fortune position */
     if (fseek(fp, pos, SEEK_SET) < 0) {
-        fprintf(stderr, "Error seeking in fortune file %s. fseek: %s\n", fortune_path, strerror(errno));
+        fprintf(stderr, "Error seeking in fortune file %s\nfseek: %s\n", fortune_path, strerror(errno));
         goto cleanup_failure;
     }
 
@@ -219,9 +219,9 @@ int read_fortune(char **fortune, const char *fortune_path, uint32_t pos, uint8_t
     for (len = 0; ; len++) {
         if ( (c = fgetc(fp)) == EOF) {
             if (feof(fp))
-                fprintf(stderr, "Error reading fortune from %s. Delimiter not found.\n", fortune_path);
+                fprintf(stderr, "Error reading fortune from %s\nDelimiter not found.\n", fortune_path);
             else if (ferror(fp))
-                fprintf(stderr, "Error reading fortune from %s. fgetc: %s\n", fortune_path, strerror(errno));
+                fprintf(stderr, "Error reading fortune from %s\nfgetc: %s\n", fortune_path, strerror(errno));
             goto cleanup_failure;
         }
         search[0] = search[1];
@@ -240,13 +240,13 @@ int read_fortune(char **fortune, const char *fortune_path, uint32_t pos, uint8_t
 
     /* Seek back to the fortune position */
     if (fseek(fp, pos, SEEK_SET) < 0) {
-        fprintf(stderr, "Error seeking in fortune file %s. fseek: %s\n", fortune_path, strerror(errno));
+        fprintf(stderr, "Error seeking in fortune file %s\nfseek: %s\n", fortune_path, strerror(errno));
         goto cleanup_failure;
     }
 
     /* Read the fortune */
     if (fread(*fortune, 1, len, fp) < len) {
-        fprintf(stderr, "Error reading fortune from %s. fread: %s\n", fortune_path, strerror(errno));
+        fprintf(stderr, "Error reading fortune from %s\nfread: %s\n", fortune_path, strerror(errno));
         goto cleanup_failure;
     }
 
