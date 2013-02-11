@@ -27,6 +27,8 @@
  * (more platform independent) */
 #define RANDOM_DEVICE_PATH  "/dev/urandom"
 
+#define PATH_MAX            4096
+
 /* .dat file header from STRFILE(1) man page */
 struct fortune_dat_header {
     uint32_t str_version;
@@ -34,7 +36,8 @@ struct fortune_dat_header {
     uint32_t str_longlen;
     uint32_t str_shortlen;
     uint32_t str_flags;
-    uint32_t str_delim;
+    uint8_t str_delim;
+    uint8_t padding[3];
 } __attribute__ ((aligned (8), packed));
 
 #if 0
@@ -75,11 +78,9 @@ int filter_extension_dat(const struct dirent *d) {
     return (strncmp(d->d_name + (len - 4), ".dat", 4) == 0);
 }
 
-int random_datfile(char **dat_path, const char *dir_path) {
+int random_datfile(char *dat_path, int maxlen, const char *dir_path) {
     struct dirent **fnamelist;
-    int n, i, ret;
-
-    ret = 0;
+    int n, i;
 
     /* Form a list of .dat fortune files */
     n = scandir(dir_path, &fnamelist, filter_extension_dat, alphasort);
@@ -91,23 +92,15 @@ int random_datfile(char **dat_path, const char *dir_path) {
     /* Pick a random .dat file */
     i = rand() % n;
 
-    /* Allocate memory for the fortune path */
-    *dat_path = malloc(strlen(dir_path) + strlen(fnamelist[i]->d_name) + 2);
-    if (*dat_path == NULL) {
-        perror("Error allocating memory for fortune path! malloc");
-        ret = -1;
-    } else {
-        /* Assemble the fortune path */
-        snprintf(*dat_path, strlen(dir_path) + strlen(fnamelist[i]->d_name) + 2, "%s/%s", dir_path, fnamelist[i]->d_name);
-        ret = 0;
-    }
+    /* Assemble the fortune path */
+    snprintf(dat_path, maxlen, "%s/%s", dir_path, fnamelist[i]->d_name);
 
     /* Free our filename list structure */
     for (i = 0; i < n; i++)
         free(fnamelist[i]);
     free(fnamelist);
 
-    return ret;
+    return 0;
 }
 
 /******************************************************************************/
@@ -212,8 +205,7 @@ int read_fortune_pos(uint32_t *pos, uint32_t *len, const char *dat_path) {
     return 0;
 
     cleanup_failure:
-    if (fp != NULL)
-        fclose(fp);
+    if (fp != NULL) fclose(fp);
     return -1;
 }
 
@@ -256,16 +248,15 @@ int read_fortune(char *fortune, const char *fortune_path, int pos, int len) {
     return 0;
 
     cleanup_failure:
-    if (fp != NULL)
-        fclose(fp);
+    if (fp != NULL) fclose(fp);
     return -1;
 }
 
 
 int main(int argc, char *argv[]) {
-    char *dat_path = NULL;
-    char *fortune = NULL;
+    char dat_path[PATH_MAX];
     uint32_t pos, len;
+    char *fortune = NULL;
 
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <path to fortune file or folder>\n", argv[0]);
@@ -279,20 +270,14 @@ int main(int argc, char *argv[]) {
     /* If the supplied path is a folder */
     if (isdir(argv[1])) {
         /* Look up a random dat file in the fortunes directory */
-        if (random_datfile(&dat_path, argv[1]) < 0) {
+        if (random_datfile(dat_path, sizeof(dat_path), argv[1]) < 0) {
             fprintf(stderr, "Error finding a fortune file!\n");
             goto cleanup_failure;
         }
-    } else {
     /* If the supplied path is a file */
-
-        /* Allocate memory for the dat file path */
-        if ((dat_path = malloc(strlen(argv[1]) + 5)) == NULL) {
-            perror("Error allocating memory for fortune path! malloc");
-            goto cleanup_failure;
-        }
+    } else {
         /* Assemble the dat file path */
-        snprintf(dat_path, strlen(argv[1]) + 5, "%s.dat", argv[1]);
+        snprintf(dat_path, sizeof(dat_path), "%s.dat", argv[1]);
     }
 
     /* Read a random fortune position and length */
@@ -316,16 +301,10 @@ int main(int argc, char *argv[]) {
     fputs(fortune, stdout);
 
     free(fortune);
-    free(dat_path);
-
     return 0;
 
     cleanup_failure:
-    if (fortune != NULL)
-        free(fortune);
-    if (dat_path != NULL)
-        free(dat_path);
-
+    if (fortune != NULL) free(fortune);
     return -1;
 }
 
