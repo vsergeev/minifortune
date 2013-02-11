@@ -39,7 +39,7 @@ Usage
 -----
 
     Usage: ./minifortune [path to fortune file or directory]
-    Version 1.4
+    Version 1.6
     
     If no fortune file or directory is specified, minifortune defaults to:
         FORTUNE_DIR         environment variable

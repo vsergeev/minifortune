@@ -263,7 +263,7 @@ int read_fortune(char **fortune, const char *fortune_path, uint32_t pos, uint8_t
 
 void print_usage(char *argv[]) {
     printf("Usage: %s [path to fortune file or directory]\n", argv[0]);
-    printf("Version 1.4\n\n\
+    printf("Version 1.6\n\n\
 If no fortune file or directory is specified, minifortune defaults to:\n\
     %s         environment variable\n\
     %s  folder\n", ENV_FORTUNE_DIR, DEF_FORTUNE_DIR);
@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
                 goto cleanup_failure;
             }
         /* Default to /usr/share/fortune directory second */
-        } else if (isdir(DEF_FORTUNE_DIR)) {
+        } else if (isdir(DEF_FORTUNE_DIR) == 1) {
             /* Look up a random dat file in the directory */
             if (random_datfile(dat_path, sizeof(dat_path), DEF_FORTUNE_DIR) < 0) {
                 fprintf(stderr, "Error finding a fortune file.\n");
@@ -299,12 +299,12 @@ int main(int argc, char *argv[]) {
             }
         /* Give up */
         } else {
-            print_usage(argv);
-            exit(EXIT_FAILURE);
+            printf("A wise man once said:\n\tPopulate %s with fortunes,\n\tor run 'minifortune -h' for more options.\n", DEF_FORTUNE_DIR);
+            exit(EXIT_SUCCESS);
         }
     } else {
         /* If the supplied path is a folder */
-        if (isdir(argv[1])) {
+        if (isdir(argv[1]) == 1) {
             /* Look up a random dat file in the directory */
             if (random_datfile(dat_path, sizeof(dat_path), argv[1]) < 0) {
                 fprintf(stderr, "Error finding a fortune file.\n");
