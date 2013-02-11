@@ -5,7 +5,7 @@
  * fortune look up from directories containing fortune files with their
  * corresponding .dat files, or fortune look up directly from fortune files.
  *
- * Usage: minifortune <path to fortune file or folder>
+ * Usage: minifortune [path to fortune file or folder]
  *
  * LICENSE: MIT License
  */
@@ -26,6 +26,9 @@
  * Undefine me to use time(NULL)+getpid() as a random seed
  * (more platform independent) */
 #define RANDOM_DEVICE_PATH  "/dev/urandom"
+
+#define ENV_FORTUNE_DIR     "FORTUNE_DIR"
+#define DEF_FORTUNE_DIR     "/usr/share/fortune"
 
 #define PATH_MAX            4096
 
@@ -258,32 +261,60 @@ int read_fortune(char **fortune, const char *fortune_path, uint32_t pos, uint8_t
     return -1;
 }
 
+void print_usage(char *argv[]) {
+    printf("Usage: %s [path to fortune file or directory]\n", argv[0]);
+    printf("Version 1.4\n\n\
+If no fortune file or directory is specified, minifortune defaults to:\n\
+    %s         environment variable\n\
+    %s  folder\n", ENV_FORTUNE_DIR, DEF_FORTUNE_DIR);
+}
 
 int main(int argc, char *argv[]) {
     char dat_path[PATH_MAX];
     uint32_t pos; uint8_t delim;
     char *fortune = NULL;
 
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <path to fortune file or folder>\n", argv[0]);
-        fprintf(stderr, "minifortune version 1.2\n");
-        exit(EXIT_FAILURE);
+    if (argc == 2 && ( (strcmp("-h", argv[1]) == 0) || (strcmp("--help", argv[1]) == 0) )) {
+        print_usage(argv);
+        exit(EXIT_SUCCESS);
     }
 
     /* Initialize our random seed */
     random_seed_init();
 
-    /* If the supplied path is a folder */
-    if (isdir(argv[1])) {
-        /* Look up a random dat file in the fortunes directory */
-        if (random_datfile(dat_path, sizeof(dat_path), argv[1]) < 0) {
-            fprintf(stderr, "Error finding a fortune file.\n");
-            goto cleanup_failure;
+    if (argc == 1) {
+        /* Default to fortune directory environment variable first */
+        if (getenv(ENV_FORTUNE_DIR) != NULL) {
+            /* Look up a random dat file in the directory */
+            if (random_datfile(dat_path, sizeof(dat_path), getenv(ENV_FORTUNE_DIR)) < 0) {
+                fprintf(stderr, "Error finding a fortune file.\n");
+                goto cleanup_failure;
+            }
+        /* Default to /usr/share/fortune directory second */
+        } else if (isdir(DEF_FORTUNE_DIR)) {
+            /* Look up a random dat file in the directory */
+            if (random_datfile(dat_path, sizeof(dat_path), DEF_FORTUNE_DIR) < 0) {
+                fprintf(stderr, "Error finding a fortune file.\n");
+                goto cleanup_failure;
+            }
+        /* Give up */
+        } else {
+            print_usage(argv);
+            exit(EXIT_FAILURE);
         }
-    /* If the supplied path is a file */
     } else {
-        /* Assemble the dat file path */
-        snprintf(dat_path, sizeof(dat_path), "%s.dat", argv[1]);
+        /* If the supplied path is a folder */
+        if (isdir(argv[1])) {
+            /* Look up a random dat file in the directory */
+            if (random_datfile(dat_path, sizeof(dat_path), argv[1]) < 0) {
+                fprintf(stderr, "Error finding a fortune file.\n");
+                goto cleanup_failure;
+            }
+        /* If the supplied path is a file */
+        } else {
+            /* Assemble the dat file path */
+            snprintf(dat_path, sizeof(dat_path), "%s.dat", argv[1]);
+        }
     }
 
     /* Read a random fortune position and length */

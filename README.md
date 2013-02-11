@@ -38,16 +38,24 @@ Run `make install` to install minifortune to /usr/local/bin.
 Usage
 -----
 
-    Usage: minifortune <path to fortune file or folder>
-    minifortune version 1.2
+    Usage: ./minifortune [path to fortune file or directory]
+    Version 1.4
+    
+    If no fortune file or directory is specified, minifortune defaults to:
+        FORTUNE_DIR         environment variable
+        /usr/share/fortune  folder
+
 
 Example usage:
 
-    Display a random fortune chosen from a random fortune file chosen from a
-    fortune directory:
+    Display a random fortune from directory in FORTUNE_DIR environment
+    variable, or /usr/share/fortune folder:
+    $ minifortune
+
+    Display a random fortune from a directory containing fortunes:
     $ minifortune /usr/share/fortune/
 
-    Display a random fortune chosen from a specific fortune file:
+    Display a random fortune from a fortune file:
     $ minifortune /usr/share/fortune/linux
 
 How Fortune Files Work
