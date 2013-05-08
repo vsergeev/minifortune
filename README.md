@@ -39,24 +39,31 @@ Usage
 -----
 
     Usage: ./minifortune [path to fortune file or directory]
-    Version 2.0
+    Version 2.2
     
     If no fortune file or directory is specified, minifortune defaults to:
-        FORTUNE_DIR         environment variable
-        /usr/share/fortune  folder
+    
+        FORTUNE_DIR          environment variable containing one
+                             or more colon-separated directories
+    
+        /usr/share/fortune   directory
+    
 
 
 Example usage:
 
-    Display a random fortune from directory in FORTUNE_DIR environment
-    variable, or /usr/share/fortune folder:
+    Display a random fortune from a directory in the FORTUNE_DIR environment
+    variable, or if that is unset, from the /usr/share/fortune directory:
     $ minifortune
 
-    Display a random fortune from a directory containing fortunes:
+    Display a random fortune from a specific directory containing fortunes:
     $ minifortune /usr/share/fortune/
 
-    Display a random fortune from a fortune file:
+    Display a random fortune from a specific fortune file:
     $ minifortune /usr/share/fortune/linux
+
+The `FORTUNE_DIR` environment variable may contain several colon-separated
+directories.  minifortune will choose one randomly from them.
 
 How Fortune Files Work
 ----------------------

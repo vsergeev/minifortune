@@ -97,6 +97,53 @@ int isdir(const char *path) {
     return 0;
 }
 
+int random_dir(char *dir_path, int maxlen, const char *dirlist) {
+    char *dirlist_tokenized;
+    int len, i, token_i, token_count;
+
+    if (dirlist == NULL)
+        return -1;
+
+    /* Make a local copy of the directory list to tokenize */
+    dirlist_tokenized = strdup(dirlist);
+    len = strlen(dirlist_tokenized);
+
+    /* Tokenize at the path separator, but interpret escape sequence \: as a
+     * colon belonging to a directory path */
+    for (i = 0, token_count = 1; i < len; i++) {
+        if ( (dirlist_tokenized[i] == ':' && i == 0) ||
+             (dirlist_tokenized[i] == ':' && dirlist_tokenized[i-1] != '\\') ) {
+            dirlist_tokenized[i] = '\0';
+            token_count++;
+        }
+    }
+
+    /* Pick a random token */
+    token_i = rand() % token_count;
+
+    /* Find the random token */
+    for (i = 0, token_count = 0; i < len; i++) {
+        if (token_i == token_count)
+            break;
+        if (dirlist_tokenized[i] == '\0')
+            token_count++;
+    }
+
+    /* By POSIX rules, ":abc:d\:ef:"
+     * is 4 tokens: "", "abc", "d\:ef", ""
+     * and empty tokens mean current directory. */
+
+    /* Empty token means current directory */
+    if (strlen(dirlist_tokenized+i) == 0)
+        strncpy(dir_path, ".", maxlen);
+    else
+        strncpy(dir_path, dirlist_tokenized+i, maxlen);
+
+    free(dirlist_tokenized);
+
+    return 0;
+}
+
 /* Boolean filter for .dat extension for use with scandir() */
 int filter_extension_dat(const struct dirent *d) {
     int len = strlen(d->d_name);
@@ -264,13 +311,15 @@ int read_fortune(char **fortune, const char *fortune_path, uint32_t pos, uint8_t
 
 void print_usage(char *argv[]) {
     printf("Usage: %s [path to fortune file or directory]\n", argv[0]);
-    printf("Version 2.0\n\n\
-If no fortune file or directory is specified, minifortune defaults to:\n\
-    %s         environment variable\n\
-    %s  folder\n", ENV_FORTUNE_DIR, DEF_FORTUNE_DIR);
+    printf("Version 2.2\n\n\
+If no fortune file or directory is specified, minifortune defaults to:\n\n\
+    %s          environment variable containing one\n\
+                         or more colon-separated directories\n\n\
+    %s   directory\n\n", ENV_FORTUNE_DIR, DEF_FORTUNE_DIR);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[], char *envp[]) {
+    char dir_path[PATH_MAX];
     char dat_path[PATH_MAX];
     uint32_t pos; uint8_t delim;
     char *fortune = NULL;
@@ -284,13 +333,18 @@ int main(int argc, char *argv[]) {
     random_seed_init();
 
     if (argc == 1) {
+
         /* Default to fortune directory environment variable first */
-        if (getenv(ENV_FORTUNE_DIR) != NULL) {
+        if (getenv(ENV_FORTUNE_DIR) != NULL && strlen(getenv(ENV_FORTUNE_DIR)) > 0) {
+            /* Look up random directory from colon separated environment
+             * varable */
+            random_dir(dir_path, sizeof(dir_path), getenv(ENV_FORTUNE_DIR));
             /* Look up a random dat file in the directory */
-            if (random_datfile(dat_path, sizeof(dat_path), getenv(ENV_FORTUNE_DIR)) <= 0) {
-                fprintf(stderr, "Error, no fortune file found in '%s'\n", getenv(ENV_FORTUNE_DIR));
+            if (random_datfile(dat_path, sizeof(dat_path), dir_path) <= 0) {
+                fprintf(stderr, "Error, no fortune file found in '%s'\n", dir_path);
                 goto cleanup_failure;
             }
+
         /* Default to /usr/share/fortune directory second */
         } else if (isdir(DEF_FORTUNE_DIR) == 1) {
             /* Look up a random dat file in the directory */
@@ -298,12 +352,15 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Error, no fortune file found in '%s'\n", DEF_FORTUNE_DIR);
                 goto cleanup_failure;
             }
+
         /* Give up */
         } else {
             printf("A wise man once said:\n\tPopulate %s with fortunes,\n\tor run 'minifortune -h' for more options.\n", DEF_FORTUNE_DIR);
             exit(EXIT_SUCCESS);
         }
+
     } else {
+
         /* If the supplied path is a folder */
         if (isdir(argv[1]) == 1) {
             /* Look up a random dat file in the directory */
@@ -311,6 +368,7 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Error, no fortune file found in '%s'\n", argv[1]);
                 goto cleanup_failure;
             }
+
         /* If the supplied path is a file */
         } else {
             /* Assemble the dat file path */
