@@ -45,6 +45,10 @@ struct fortune_dat_header {
     uint8_t padding[3];
 } __attribute__ ((aligned (8), packed));
 
+#define DAT_STR_FLAG_RANDOM    0x1      /* randomized pointers */
+#define DAT_STR_FLAG_ORDERED   0x2      /* ordered pointers */
+#define DAT_STR_FLAG_ROTATED   0x4      /* rot-13'd text */
+
 void dat_header_dump(const struct fortune_dat_header *dat_header) {
     printf("str_version: %d\n", dat_header->str_version);
     printf("str_numstr: %d\n", dat_header->str_numstr);
@@ -139,7 +143,7 @@ int choose_random_datfile(char *dat_path, int maxlen, const char *dir_path) {
 }
 
 /* Choose a random fortune position from a .dat file dat_path. */
-int choose_random_fortune_pos(uint32_t *pos, uint8_t *delim, const char *dat_path) {
+int choose_random_fortune_pos(uint32_t *pos, uint8_t *delim, bool *rot13, const char *dat_path) {
     FILE *fp;
     struct fortune_dat_header dat_header;
     uint32_t fortune_id, fortune_pos;
@@ -191,6 +195,7 @@ int choose_random_fortune_pos(uint32_t *pos, uint8_t *delim, const char *dat_pat
 
     *pos = fortune_pos;
     *delim = dat_header.str_delim;
+    *rot13 = ((dat_header.str_flags & DAT_STR_FLAG_ROTATED) != 0);
 
     fclose(fp);
     return 0;
@@ -206,7 +211,7 @@ int choose_random_fortune_pos(uint32_t *pos, uint8_t *delim, const char *dat_pat
 /******************************************************************************/
 
 /* Read a fortune from fortune file fortune_path at position pos and delimiter delim. */
-int read_fortune(char **fortune, const char *fortune_path, uint32_t pos, uint8_t delim) {
+int read_fortune(char **fortune, const char *fortune_path, uint32_t pos, uint8_t delim, bool rot13) {
     FILE *fp;
     int len, c;
     char search[2] = {0};
@@ -263,6 +268,16 @@ int read_fortune(char **fortune, const char *fortune_path, uint32_t pos, uint8_t
     /* Null terminate the fortune */
     (*fortune)[len] = '\0';
 
+    /* If the fortune is rot13'd, de-rot13 it */
+    if (rot13) {
+        for (unsigned int i = 0; i < len; i++) {
+            if ((*fortune)[i] >= 'a' && (*fortune)[i] <= 'z')
+                (*fortune)[i] = ((((*fortune)[i] - 'a') + 13) % 26) + 'a';
+            else if ((*fortune)[i] >= 'A' && (*fortune)[i] <= 'Z')
+                (*fortune)[i] = ((((*fortune)[i] - 'A') + 13) % 26) + 'A';
+        }
+    }
+
     fclose(fp);
     return 0;
 
@@ -292,6 +307,7 @@ int main(int argc, char *argv[], char *envp[]) {
 
     uint32_t fortune_pos;
     uint8_t fortune_delim;
+    bool fortune_rot13;
     char *fortune = NULL;
 
     /* Help/Usage */
@@ -380,14 +396,14 @@ If no fortune file or directory is specified, minifortune defaults to:\n\n\
     }
 
     /* Choose a random fortune position from the DAT file */
-    if (choose_random_fortune_pos(&fortune_pos, &fortune_delim, dat_path) < 0)
+    if (choose_random_fortune_pos(&fortune_pos, &fortune_delim, &fortune_rot13, dat_path) < 0)
         exit(EXIT_FAILURE);
 
     /* Chop off the .dat suffix of the DAT path to get the fortune path */
     dat_path[strlen(dat_path)-4] = '\0';
 
     /* Read the fortune */
-    if (read_fortune(&fortune, dat_path, fortune_pos, fortune_delim) < 0)
+    if (read_fortune(&fortune, dat_path, fortune_pos, fortune_delim, fortune_rot13) < 0)
         exit(EXIT_FAILURE);
 
     /* Print the fortune */
