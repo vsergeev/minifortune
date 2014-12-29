@@ -98,9 +98,12 @@ int choose_random_directory(char *dir_path, size_t maxlen, const char *directori
 
     /* Empty token means current directory */
     if (strlen(directories_tokenized+i) == 0)
-        strncpy(dir_path, ".", maxlen);
+        strncpy(dir_path, ".", maxlen-1);
     else
-        strncpy(dir_path, directories_tokenized+i, maxlen);
+        strncpy(dir_path, directories_tokenized+i, maxlen-1);
+
+    /* Null terminate the directory path */
+    dir_path[maxlen-1] = '\0';
 
     free(directories_tokenized);
 
