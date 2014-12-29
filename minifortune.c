@@ -1,5 +1,5 @@
 /*
- * minifortune - https://github.com/vsergeev/minifortune
+ * minifortune v2.2 - https://github.com/vsergeev/minifortune
  * A minimal fortune-mod clone, dependent on libc only.
  * LICENSE: MIT License
  */
@@ -62,7 +62,8 @@ void dat_header_dump(const struct fortune_dat_header *dat_header) {
 /* Utility functions to choose a random directory, dat file, fortune position. */
 /******************************************************************************/
 
-/* Choose random directory from colon-separated list directories. */
+/* Choose a random directory from the colon-separated list directories.
+ * e.g. "/foo/bar:/usr/share/foo:/usr/local/bar" -> "/usr/local/bar" */
 int choose_random_directory(char *dir_path, size_t maxlen, const char *directories) {
     char *directories_tokenized;
     unsigned int i, token_count, token_index;
@@ -73,8 +74,8 @@ int choose_random_directory(char *dir_path, size_t maxlen, const char *directori
     /* Make a local copy of the directory list to tokenize */
     directories_tokenized = strdup(directories);
 
-    /* By POSIX rules, ":abc:d\:ef:" is 4 tokens: "", "abc", "d\:ef", ""
-     * and empty tokens mean current directory. */
+    /* By POSIX rules, ":abc:d\:ef:" is 4 tokens: "", "abc", "d\:ef", "" */
+    /* Empty tokens mean current directory. */
 
     /* Tokenize at the path separator, but interpret escape sequence \: as a colon belonging to a directory path */
     for (i = 0, token_count = 1; i < strlen(directories_tokenized); i++) {
@@ -123,7 +124,7 @@ int choose_random_datfile(char *dat_path, int maxlen, const char *dir_path) {
     struct dirent **fnamelist;
     int n;
 
-    /* Form a list of .dat fortune files in directory dir_path */
+    /* Form a list of .dat files in directory dir_path */
     n = scandir(dir_path, &fnamelist, filter_extension_dat, alphasort);
     if (n < 0) {
         fprintf(stderr, "Error reading fortune directory '%s': scandir(): %s\n", dir_path, strerror(errno));
@@ -137,7 +138,7 @@ int choose_random_datfile(char *dat_path, int maxlen, const char *dir_path) {
     if (n > 0) {
         /* Pick a random .dat file */
         unsigned int i = rand() % n;
-        /* Assemble the fortune path */
+        /* Assemble the .dat file path */
         snprintf(dat_path, maxlen, "%s/%s", dir_path, fnamelist[i]->d_name);
     }
 
@@ -155,13 +156,13 @@ int choose_random_fortune_pos(uint32_t *pos, uint8_t *delim, bool *rot13, const 
     struct fortune_dat_header dat_header;
     uint32_t fortune_id, fortune_pos;
 
-    /* Open the dat file */
+    /* Open the .dat file */
     if ((fp = fopen(dat_path, "r")) == NULL) {
         fprintf(stderr, "Error opening fortune dat file '%s': fopen(): %s\n", dat_path, strerror(errno));
         goto cleanup_failure;
     }
 
-    /* Read the dat file header */
+    /* Read the .dat file header */
     if (fread(&dat_header, sizeof(struct fortune_dat_header), 1, fp) < 1) {
         fprintf(stderr, "Error reading fortune dat header from '%s': fread(): %s\n", dat_path, strerror(errno));
         goto cleanup_failure;
@@ -187,7 +188,7 @@ int choose_random_fortune_pos(uint32_t *pos, uint8_t *delim, bool *rot13, const 
     /* Pick a random fortune */
     fortune_id = rand() % dat_header.str_numstr;
 
-    /* Seek to the fortune position in the dat file table */
+    /* Seek to the fortune position in the .dat file positions table */
     if (fseek(fp, fortune_id*4, SEEK_CUR) < 0) {
         fprintf(stderr, "Error seeking to fortune id %d in '%s': fseek(): %s\n", fortune_id, dat_path, strerror(errno));
         goto cleanup_failure;
@@ -319,12 +320,13 @@ int main(int argc, char *argv[], char *envp[]) {
 
     /* Help/Usage */
     if (argc == 2 && ((strcmp("-h", argv[1]) == 0) || (strcmp("--help", argv[1]) == 0))) {
-        printf("Usage: %s [path to fortune file or directory]\n", argv[0]);
-        printf("Version 2.2 - https://github.com/vsergeev/minifortune\n\n\
+        printf("\
+Usage: %s [path to fortune file or directory]\n\
+Version 2.2 - https://github.com/vsergeev/minifortune\n\n\
 If no fortune file or directory is specified, minifortune defaults to:\n\n\
     %s          environment variable containing one\n\
                          or more colon-separated directories\n\n\
-    %s   directory\n\n", ENV_FORTUNE_DIR, DEF_FORTUNE_DIR);
+    %s   directory\n\n", argv[0], ENV_FORTUNE_DIR, DEF_FORTUNE_DIR);
         exit(EXIT_SUCCESS);
     }
 
@@ -364,7 +366,7 @@ If no fortune file or directory is specified, minifortune defaults to:\n\n\
                 fprintf(stderr, "Error, no directory found in list '%s'.\n", getenv(ENV_FORTUNE_DIR));
                 exit(EXIT_FAILURE);
             }
-            /* Look up a random dat file in the directory */
+            /* Look up a random .dat file in the directory */
             if (choose_random_datfile(dat_path, sizeof(dat_path), dir_path) < 0) {
                 fprintf(stderr, "Error, no fortune file found in directory '%s'.\n", dir_path);
                 exit(EXIT_FAILURE);
@@ -373,7 +375,7 @@ If no fortune file or directory is specified, minifortune defaults to:\n\n\
         } else if (isdir(DEF_FORTUNE_DIR)) {
             /* Default to /usr/share/fortune directory second */
 
-            /* Look up a random dat file in the directory */
+            /* Look up a random .dat file in the directory */
             if (choose_random_datfile(dat_path, sizeof(dat_path), DEF_FORTUNE_DIR) < 0) {
                 fprintf(stderr, "Error, no fortune file found in directory '%s'.\n", DEF_FORTUNE_DIR);
                 exit(EXIT_FAILURE);
@@ -389,24 +391,24 @@ If no fortune file or directory is specified, minifortune defaults to:\n\n\
         if (isdir(argv[1])) {
             /* If the supplied path is a folder */
 
-            /* Look up a random dat file in the directory */
+            /* Look up a random .dat file in the directory */
             if (choose_random_datfile(dat_path, sizeof(dat_path), argv[1]) < 0) {
                 fprintf(stderr, "Error, no fortune file found in directory '%s'.\n", argv[1]);
                 exit(EXIT_FAILURE);
             }
         } else {
-            /* If the supplied path is a fortune */
+            /* If the supplied path is a fortune file */
 
-            /* Assemble the DAT path from the fortune path */
+            /* Assemble the .dat file path from the fortune file path */
             snprintf(dat_path, sizeof(dat_path), "%s.dat", argv[1]);
         }
     }
 
-    /* Choose a random fortune position from the DAT file */
+    /* Choose a random fortune position from the .dat file */
     if (choose_random_fortune_pos(&fortune_pos, &fortune_delim, &fortune_rot13, dat_path) < 0)
         exit(EXIT_FAILURE);
 
-    /* Chop off the .dat suffix of the DAT path to get the fortune path */
+    /* Chop off the .dat suffix of the .dat file path to get the fortune file path */
     dat_path[strlen(dat_path)-4] = '\0';
 
     /* Read the fortune */
