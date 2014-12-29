@@ -18,6 +18,8 @@ minifortune currently does not generate the random-access .dat files associated 
 
 ## Building
 
+AUR package: <https://aur.archlinux.org/packages/minifortune/>
+
 Run `make` to build minifortune.
 
 Run `make install` to install minifortune to /usr/bin.
