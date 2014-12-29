@@ -1,4 +1,4 @@
-# minifortune
+# minifortune v2.4
 
 minifortune is a minimal fortune-mod clone, dependent on libc only.
 

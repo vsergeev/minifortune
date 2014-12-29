@@ -1,5 +1,5 @@
 /*
- * minifortune v2.2 - https://github.com/vsergeev/minifortune
+ * minifortune v2.4 - https://github.com/vsergeev/minifortune
  * A minimal fortune-mod clone, dependent on libc only.
  * LICENSE: MIT License
  */
@@ -322,7 +322,7 @@ int main(int argc, char *argv[], char *envp[]) {
     if (argc == 2 && ((strcmp("-h", argv[1]) == 0) || (strcmp("--help", argv[1]) == 0))) {
         printf("\
 Usage: %s [path to fortune file or directory]\n\
-Version 2.2 - https://github.com/vsergeev/minifortune\n\n\
+Version 2.4 - https://github.com/vsergeev/minifortune\n\n\
 If no fortune file or directory is specified, minifortune defaults to:\n\n\
     %s          environment variable containing one\n\
                          or more colon-separated directories\n\n\
