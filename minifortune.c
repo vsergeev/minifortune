@@ -130,6 +130,10 @@ int choose_random_datfile(char *dat_path, int maxlen, const char *dir_path) {
         return -1;
     }
 
+    /* No .dat files found */
+    if (n == 0)
+        return -1;
+
     if (n > 0) {
         /* Pick a random .dat file */
         unsigned int i = rand() % n;
