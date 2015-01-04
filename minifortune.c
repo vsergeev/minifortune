@@ -320,13 +320,12 @@ int main(int argc, char *argv[], char *envp[]) {
 
     /* Help/Usage */
     if (argc == 2 && ((strcmp("-h", argv[1]) == 0) || (strcmp("--help", argv[1]) == 0))) {
-        printf("\
-Usage: %s [path to fortune file or directory]\n\
-Version 2.4 - https://github.com/vsergeev/minifortune\n\n\
-If no fortune file or directory is specified, minifortune defaults to:\n\n\
-    %s          environment variable containing one\n\
-                         or more colon-separated directories\n\n\
-    %s   directory\n\n", argv[0], ENV_FORTUNE_DIR, DEF_FORTUNE_DIR);
+        printf("Usage: %s [path to fortune file or directory]\n"
+               "Version 2.4 - https://github.com/vsergeev/minifortune\n\n"
+               "If no fortune file or directory is specified, minifortune defaults to:\n\n"
+               "   %s          environment variable containing one\n"
+               "                        or more colon-separated directories\n\n"
+               "   %s   directory\n\n", argv[0], ENV_FORTUNE_DIR, DEF_FORTUNE_DIR);
         exit(EXIT_SUCCESS);
     }
 
