@@ -24,8 +24,8 @@
 /* Default fortune directory */
 #define DEF_FORTUNE_DIR     "/usr/share/fortune"
 
-/* Fortune directory environment variable */
-#define ENV_FORTUNE_DIR     "FORTUNE_DIR"
+/* Fortune path environment variable */
+#define ENV_FORTUNE_PATH    "FORTUNE_PATH"
 
 /* Maximum path length */
 #define PATH_MAX            4096
@@ -59,54 +59,49 @@ void dat_header_dump(const struct fortune_dat_header *dat_header) {
 }
 
 /******************************************************************************/
-/* Utility functions to choose a random directory, dat file, fortune position. */
+/* Utility functions to choose a random path, dat file, and fortune position. */
 /******************************************************************************/
 
-/* Choose a random directory from the colon-separated list directories.
+/* Choose a random path from the colon-separated list of paths.
  * e.g. "/foo/bar:/usr/share/foo:/usr/local/bar" -> "/usr/local/bar" */
-int choose_random_directory(char *dir_path, size_t maxlen, const char *directories) {
-    char *directories_tokenized;
-    unsigned int i, token_count, token_index;
+int choose_random_path(char *path, size_t maxlen, const char *paths) {
+    /* By POSIX rules, ":abc:d\:ef:" is 4 tokens: "", "abc", "d\:ef", ""
+     * and empty tokens mean current directory. */
 
-    if (strlen(directories) == 0)
-        return -1;
+    /* Count number of tokens */
+    unsigned int token_count = 1;
+    for (int i = 0; i < strlen(paths); i++)
+        token_count += ((paths[i] == ':' && i == 0) || (paths[i] == ':' && paths[i-1] != '\\'));
 
-    /* Make a local copy of the directory list to tokenize */
-    directories_tokenized = strdup(directories);
+    /* Pick a random token from [1, token_count] */
+    unsigned int token_choice = (rand() % token_count) + 1;
 
-    /* By POSIX rules, ":abc:d\:ef:" is 4 tokens: "", "abc", "d\:ef", "" */
-    /* Empty tokens mean current directory. */
-
-    /* Tokenize at the path separator, but interpret escape sequence \: as a colon belonging to a directory path */
-    for (i = 0, token_count = 1; i < strlen(directories_tokenized); i++) {
-        if ((directories_tokenized[i] == ':' && i == 0) ||
-              (directories_tokenized[i] == ':' && directories_tokenized[i-1] != '\\')) {
-            directories_tokenized[i] = '\0';
+    /* Find the token offset and length */
+    token_count = 1;
+    unsigned int token_offset = 0, token_length = 0;
+    for (int i = 0; i < strlen(paths); i++) {
+        if ((paths[i] == ':' && i == 0) || (paths[i] == ':' && paths[i-1] != '\\')) {
             token_count++;
+
+            if (token_count == token_choice)
+                token_offset = i+1;
+            else if (token_count > token_choice)
+                break;
+        } else {
+            if (token_count == token_choice)
+                token_length++;
         }
     }
 
-    /* Pick a random token */
-    token_index = rand() % token_count;
-
-    /* Find the random token */
-    for (i = 0, token_count = 0; i < strlen(directories_tokenized); i++) {
-        if (token_index == token_count)
-            break;
-        if (directories_tokenized[i] == '\0')
-            token_count++;
+    /* Copy token to path */
+    if (token_length == 0) {
+        strncpy(path, ".", maxlen-1);
+        path[maxlen-1] = '\0';
+    } else {
+        unsigned int length = (token_length < (maxlen-1)) ? token_length : (maxlen-1);
+        strncpy(path, paths+token_offset, length);
+        path[length] = '\0';
     }
-
-    /* Empty token means current directory */
-    if (strlen(directories_tokenized+i) == 0)
-        strncpy(dir_path, ".", maxlen-1);
-    else
-        strncpy(dir_path, directories_tokenized+i, maxlen-1);
-
-    /* Null terminate the directory path */
-    dir_path[maxlen-1] = '\0';
-
-    free(directories_tokenized);
 
     return 0;
 }
@@ -309,8 +304,7 @@ bool isdir(const char *path) {
     return false;
 }
 
-int main(int argc, char *argv[], char *envp[]) {
-    char dir_path[PATH_MAX];
+int main(int argc, char *argv[]) {
     char dat_path[PATH_MAX];
 
     uint32_t fortune_pos;
@@ -323,9 +317,9 @@ int main(int argc, char *argv[], char *envp[]) {
         printf("Usage: %s [path to fortune file or directory]\n"
                "Version 2.4 - https://github.com/vsergeev/minifortune\n\n"
                "If no fortune file or directory is specified, minifortune defaults to:\n\n"
-               "   %s          environment variable containing one\n"
-               "                        or more colon-separated directories\n\n"
-               "   %s   directory\n\n", argv[0], ENV_FORTUNE_DIR, DEF_FORTUNE_DIR);
+               "    %s         environment variable containing one or\n"
+               "                         more colon-separated files or directories\n\n"
+               "    %s   directory\n\n", argv[0], ENV_FORTUNE_PATH, DEF_FORTUNE_DIR);
         exit(EXIT_SUCCESS);
     }
 
@@ -357,22 +351,29 @@ int main(int argc, char *argv[], char *envp[]) {
     if (argc == 1) {
         /* No explicit fortune directory/file specified */
 
-        if (getenv(ENV_FORTUNE_DIR) != NULL && strlen(getenv(ENV_FORTUNE_DIR)) > 0) {
-            /* Default to the fortune directory environment variable first */
+        if (getenv(ENV_FORTUNE_PATH) != NULL && strlen(getenv(ENV_FORTUNE_PATH)) > 0) {
+            /* Default to the fortune path environment variable first */
 
-            /* Look up a random directory from the colon separated path in the environment variable */
-            if (choose_random_directory(dir_path, sizeof(dir_path), getenv(ENV_FORTUNE_DIR)) < 0) {
-                fprintf(stderr, "Error, no directory found in list '%s'.\n", getenv(ENV_FORTUNE_DIR));
-                exit(EXIT_FAILURE);
-            }
-            /* Look up a random .dat file in the directory */
-            if (choose_random_datfile(dat_path, sizeof(dat_path), dir_path) < 0) {
-                fprintf(stderr, "Error, no fortune file found in directory '%s'.\n", dir_path);
+            char path[PATH_MAX];
+
+            /* Look up a random path from the colon separated paths in the environment variable */
+            if (choose_random_path(path, sizeof(path), getenv(ENV_FORTUNE_PATH)) < 0) {
+                fprintf(stderr, "Error, no path found in paths '%s'.\n", getenv(ENV_FORTUNE_PATH));
                 exit(EXIT_FAILURE);
             }
 
+            if (isdir(path)) {
+                /* Look up a random .dat file in the directory */
+                if (choose_random_datfile(dat_path, sizeof(dat_path), path) < 0) {
+                    fprintf(stderr, "Error, no fortune file found in directory '%s'.\n", path);
+                    exit(EXIT_FAILURE);
+                }
+            } else {
+                /* Assemble the .dat file path from the fortune file path */
+                snprintf(dat_path, sizeof(dat_path), "%s.dat", path);
+            }
         } else if (isdir(DEF_FORTUNE_DIR)) {
-            /* Default to /usr/share/fortune directory second */
+            /* Default to fortune directory second */
 
             /* Look up a random .dat file in the directory */
             if (choose_random_datfile(dat_path, sizeof(dat_path), DEF_FORTUNE_DIR) < 0) {
