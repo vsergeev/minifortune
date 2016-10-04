@@ -15,7 +15,8 @@ clean:
 
 .PHONY: install
 install: $(PROGNAME)
-	install -D -s -m 0755 $(PROGNAME) $(DESTDIR)$(BINDIR)/$(PROGNAME)
+	install -d $(DESTDIR)$(BINDIR)
+	install -s -m755 $(PROGNAME) $(DESTDIR)$(BINDIR)/$(PROGNAME)
 
 .PHONY: uninstall
 uninstall:
