@@ -11,7 +11,7 @@ all: $(PROGNAME)
 
 .PHONY: clean
 clean:
-	rm -rf $(PROGNAME)
+	rm -f $(PROGNAME)
 
 .PHONY: install
 install: $(PROGNAME)
@@ -23,4 +23,3 @@ uninstall:
 
 $(PROGNAME): $(PROGNAME).c
 	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
-
