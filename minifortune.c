@@ -217,6 +217,15 @@ bool isdir(const char *path) {
     return S_ISDIR(st_buf.st_mode) != 0;
 }
 
+bool isfile(const char *path) {
+    struct stat st_buf;
+
+    if (stat(path, &st_buf) < 0)
+        return false;
+
+    return S_ISREG(st_buf.st_mode) != 0;
+}
+
 /******************************************************************************/
 /* Read fortune function. */
 /******************************************************************************/
@@ -338,9 +347,12 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Error, no fortune file found in directory: \"%s\"\n", path);
                     exit(EXIT_FAILURE);
                 }
-            } else {
+            } else if (isfile(path)) {
                 /* Assemble the .dat file path from the fortune file path */
                 snprintf(dat_path, sizeof(dat_path), "%s.dat", path);
+            } else {
+                fprintf(stderr, "Error, invalid fortune path: \"%s\"\n", path);
+                exit(EXIT_FAILURE);
             }
         } else if (isdir(DEF_FORTUNE_DIR)) {
             /* Default to fortune directory second */
@@ -359,18 +371,21 @@ int main(int argc, char *argv[]) {
         /* Explicit fortune directory/file specified */
 
         if (isdir(argv[1])) {
-            /* If the supplied path is a folder */
+            /* If the supplied path is a directory */
 
             /* Look up a random .dat file in the directory */
             if (choose_random_datfile(dat_path, sizeof(dat_path), argv[1]) < 0) {
                 fprintf(stderr, "Error, no fortune .dat file found in directory \"%s\".\n", argv[1]);
                 exit(EXIT_FAILURE);
             }
-        } else {
+        } else if (isfile(argv[1])) {
             /* If the supplied path is a fortune file */
 
             /* Assemble the .dat file path from the fortune file path */
             snprintf(dat_path, sizeof(dat_path), "%s.dat", argv[1]);
+        } else {
+            fprintf(stderr, "Error, invalid fortune path: \"%s\"\n", argv[1]);
+            exit(EXIT_FAILURE);
         }
     }
 
