@@ -17,10 +17,6 @@
 #include <sys/stat.h>
 #include <arpa/inet.h>
 
-/* Random device to use for random seeding
- * Undefine me to use time(NULL)+getpid() as a random seed (more platform independent) */
-#define RANDOM_DEVICE_PATH  "/dev/urandom"
-
 /* Default fortune directory */
 #define DEF_FORTUNE_DIR     "/usr/share/fortune"
 
@@ -324,29 +320,8 @@ int main(int argc, char *argv[]) {
     }
 
     /* Initialize our random seed */
-    #ifdef RANDOM_DEVICE_PATH
-    /* Read from random device path */
-    {
-        int fd;
-        uint32_t seed;
-
-        if ((fd = open(RANDOM_DEVICE_PATH, O_RDONLY)) < 0) {
-            fprintf(stderr, "Error opening random device '%s'. open(): %s\n", RANDOM_DEVICE_PATH, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-
-        if (read(fd, &seed, 4) < 4) {
-            fprintf(stderr, "Error reading random device '%s'. read(): %s\n", RANDOM_DEVICE_PATH, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-
-        close(fd);
-        srand(seed);
-    }
-    #else
-    /* time + getpid seeding borrowed from original fortune-mod */
+    /* time() + getpid() seeding borrowed from original fortune-mod */
     srand(time(NULL) + getpid());
-    #endif
 
     if (argc == 1) {
         /* No explicit fortune directory/file specified */
