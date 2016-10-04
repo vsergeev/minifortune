@@ -1,4 +1,4 @@
-# minifortune v2.4
+# minifortune [![GitHub release](https://img.shields.io/github/release/vsergeev/minifortune.svg?maxAge=7200)](https://github.com/vsergeev/minifortune) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/vsergeev/minifortune/blob/master/LICENSE)
 
 minifortune is a minimal fortune-mod clone, dependent on libc only.
 
