@@ -31,7 +31,7 @@ minifortune.
 $ minifortune --help
 Usage: minifortune [path to fortune file or directory]
 
-Version 2.4 - https://github.com/vsergeev/minifortune
+Version 2.5 - https://github.com/vsergeev/minifortune
 
 If no fortune file or directory is specified, minifortune defaults to:
 
